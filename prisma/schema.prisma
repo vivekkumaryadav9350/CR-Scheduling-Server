@@ -1,0 +1,251 @@
+generator client {
+  provider = "prisma-client-js"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+// =====================================================
+// ADMIN
+// =====================================================
+
+model Admin {
+  id Int @id @default(autoincrement())
+
+  name     String @db.VarChar(100)
+  email    String @unique @db.VarChar(100)
+  password String @db.VarChar(255)
+
+  isActive  Boolean @default(true) @map("is_active")
+  isDeleted Boolean @default(false) @map("is_deleted")
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  @@map("admin")
+}
+
+// =====================================================
+// HOD
+// =====================================================
+
+model Hod {
+  id Int @id @default(autoincrement())
+
+  name     String @db.VarChar(100)
+  email    String @unique @db.VarChar(100)
+  password String @db.VarChar(255)
+
+  employeeCode String @unique @map("employee_code") @db.VarChar(50)
+
+  // PRIMARY = Class 1-5
+  // MIDDLE  = Class 6-8
+  // SENIOR  = Class 9-12
+  hodGroup String @unique @map("hod_group") @db.VarChar(20)
+
+  isActive  Boolean @default(true) @map("is_active")
+  isDeleted Boolean @default(false) @map("is_deleted")
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  @@map("hod")
+}
+
+// =====================================================
+// TEACHER
+// =====================================================
+
+model Teacher {
+  id Int @id @default(autoincrement())
+
+  name     String @db.VarChar(100)
+  email    String @unique @db.VarChar(100)
+  password String @db.VarChar(255)
+
+  employeeCode String @unique @map("employee_code") @db.VarChar(50)
+
+  isActive  Boolean @default(true) @map("is_active")
+  isDeleted Boolean @default(false) @map("is_deleted")
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  schedules Schedule[]
+
+  @@map("teacher")
+}
+
+// =====================================================
+// CLASS
+// =====================================================
+
+model Class {
+  id Int @id @default(autoincrement())
+  name String @unique @db.VarChar(50)
+
+  isActive  Boolean @default(true) @map("is_active")
+  isDeleted Boolean @default(false) @map("is_deleted")
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  sections  Section[]
+  schedules Schedule[]
+
+  @@map("class")
+}
+
+
+// =====================================================
+// SECTION
+// =====================================================
+
+model Section {
+  id Int @id @default(autoincrement())
+
+  classId Int @map("class_id")
+  name    String @db.VarChar(20)
+
+  isActive  Boolean @default(true) @map("is_active")
+  isDeleted Boolean @default(false) @map("is_deleted")
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  class     Class      @relation(fields: [classId], references: [id])
+  schedules Schedule[]
+
+  @@unique([classId, name])
+  @@index([classId])
+  @@map("section")
+}
+
+// =====================================================
+// SUBJECT
+// =====================================================
+
+model Subject {
+  id Int @id @default(autoincrement())
+
+  name String @unique @db.VarChar(100)
+
+  isActive  Boolean @default(true) @map("is_active")
+  isDeleted Boolean @default(false) @map("is_deleted")
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  schedules Schedule[]
+
+  @@map("subject")
+}
+
+// =====================================================
+// PERIOD
+// =====================================================
+
+model Period {
+  id Int @id @default(autoincrement())
+
+  startTime DateTime @map("start_time") @db.Time(6)
+  endTime   DateTime @map("end_time") @db.Time(6)
+
+  isActive  Boolean @default(true) @map("is_active")
+  isDeleted Boolean @default(false) @map("is_deleted")
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  schedules Schedule[]
+
+  @@unique([startTime, endTime])
+  @@map("period")
+}
+
+// =====================================================
+// SCHEDULE
+// =====================================================
+
+model Schedule {
+  id Int @id @default(autoincrement())
+
+  classId   Int @map("class_id")
+  sectionId Int @map("section_id")
+  teacherId Int @map("teacher_id")
+  subjectId Int @map("subject_id")
+  periodId  Int @map("period_id")
+
+  scheduleDate DateTime @map("schedule_date") @db.Date
+  dayOfWeek    String? @map("day_of_week") @db.VarChar(20)
+
+  isActive  Boolean @default(true) @map("is_active")
+  isDeleted Boolean @default(false) @map("is_deleted")
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  class   Class   @relation(fields: [classId], references: [id])
+  section Section @relation(fields: [sectionId], references: [id])
+  teacher Teacher @relation(fields: [teacherId], references: [id])
+  subject Subject @relation(fields: [subjectId], references: [id])
+  period  Period  @relation(fields: [periodId], references: [id])
+
+  // Same class and section cannot have
+  // two schedules in the same period.
+
+  @@index([scheduleDate])
+  @@index([teacherId])
+  @@index([classId])
+  @@index([sectionId])
+  @@index([subjectId])
+  @@index([periodId])
+  @@map("schedule")
+}
+
+// =====================================================
+// ROLE
+// =====================================================
+
+model Role {
+  id Int @id @default(autoincrement())
+
+  name String @unique @db.VarChar(50)
+
+  isActive  Boolean @default(true) @map("is_active")
+  isDeleted Boolean @default(false) @map("is_deleted")
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  users User[]
+
+  @@map("role")
+}
+
+// =====================================================
+// USER
+// =====================================================
+
+model User {
+  id Int @id @default(autoincrement())
+
+  roleId Int @map("role_id")
+
+  name     String @db.VarChar(100)
+  email    String @unique @db.VarChar(100)
+  password String @db.VarChar(255)
+
+  isActive  Boolean @default(true) @map("is_active")
+  isDeleted Boolean @default(false) @map("is_deleted")
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  role Role @relation(fields: [roleId], references: [id])
+
+  @@index([roleId])
+  @@map("user")
+}

@@ -1,0 +1,126 @@
+------          Period1     Period2    Period3    Period4    Period5     Period6       Period7 
+            
+class1         
+
+class2
+
+class3
+   
+
+  // YE hai main schedule dashboard sirf view ke liye read only //
+
+  isme class aaengi : http://localhost:5000/class/get 
+  aur specific class select hogi agar filter lagana pade to http://localhost:5000/class/get/:id(only in backend)
+  response{
+    classId,
+    ClassName,
+  }
+
+
+  ab period row aaegi : http://localhost:5000/period/get
+
+  response{}
+
+
+Now, class ke respect me aur speific period ke liye ek card banega jisme table aaengi
+sectionName➡️teacherName➡️subjectName➡️day&Date
+sectionName➡️teacherName➡️subjectName➡️day&Date
+sectionName➡️teacherName➡️subjectName➡️day&Date
+
+ye aaega data :   http://localhost:5000/schedule/get
+ response     {
+                     periodId
+                     sectionId
+                     classId
+                    sectionName
+                    teacherName
+                    subjectName
+                    scheduleDate
+                    dayOfWeek             
+           }
+
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+
+-------------      Period1     Period2    Period3    Period4    Period5     Period6       Period7  
+
+teacherName   -
+
+teacherName   -
+
+teacherName   -
+
+
+ye hai agar hod teacher ke hisab se schedule dekhna chahe 
+isme bhi cards aaenge period ke hisab se 
+period: http://localhost:5000/period/get
+
+tecaherName: http://localhost:5000/teacher/get
+response{
+      name: teacher.name,
+      employeeCode: teacher.employeeCode,
+} 
+
+only need this and for getting schedule for these cards respective to teacher 
+   
+classname➡️sectionName➡️subject➡️Day&Date
+classname➡️sectionName➡️subject➡️Day&Date
+classname➡️sectionName➡️subject➡️Day&Date
+
+api : http://localhost:5000/schedule/teacher/:teacherName
+response{
+    
+  periodId,
+  classId,
+  sectionId,
+  subjectId,
+
+  className,
+  sectionName,
+  subjectName,
+
+  scheduleDate,
+  dayOfWeek
+
+}
+
+///////////////////////////////////////////////////////////////////////////////////////////////////////
+
+-------------      Period1     Period2    Period3    Period4    Period5     Period6       Period7  
+
+className   -
+
+className  -
+
+className   -
+
+
+ye hai agar hod class ke hisab se schedule dekhna chahe 
+isme bhi cards aaenge period ke hisab se 
+period: http://localhost:5000/period/get
+
+className: http://localhost:5000/class/get
+response{
+     className
+} 
+
+only need this and for getting schedule for these cards respective to teacher 
+   
+sectionName➡️tecaherName➡️subject➡️Day&Date
+sectionName➡️tecaherName➡️subject➡️Day&Date
+sectionName➡️tecaherName➡️subject➡️Day&Date
+
+api : http://localhost:5000/schedule/class/:className
+{
+  periodId,
+  teacherId,
+  sectionId,
+  subjectId,
+
+  teacherName,
+  sectionName,
+  subjectName,
+
+  scheduleDate,
+  dayOfWeek
+}
