@@ -1,126 +1,51 @@
-------          Period1     Period2    Period3    Period4    Period5     Period6       Period7 
-            
-class1         
+const express = require("express");
+require("dotenv").config();
+const cookieParser = require("cookie-parser");
+const cors = require("cors");
 
-class2
-
-class3
-   
-
-  // YE hai main schedule dashboard sirf view ke liye read only //
-
-  isme class aaengi : http://localhost:5000/class/get 
-  aur specific class select hogi agar filter lagana pade to http://localhost:5000/class/get/:id(only in backend)
-  response{
-    classId,
-    ClassName,
-  }
+const app = express();
+const PORT = 5000;
 
 
-  ab period row aaegi : http://localhost:5000/period/get
 
-  response{}
+//Routes
 
-
-Now, class ke respect me aur speific period ke liye ek card banega jisme table aaengi
-sectionName➡️teacherName➡️subjectName➡️day&Date
-sectionName➡️teacherName➡️subjectName➡️day&Date
-sectionName➡️teacherName➡️subjectName➡️day&Date
-
-ye aaega data :   http://localhost:5000/schedule/get
- response     {
-                     periodId
-                     sectionId
-                     classId
-                    sectionName
-                    teacherName
-                    subjectName
-                    scheduleDate
-                    dayOfWeek             
-           }
-
-/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+const User = require("./routes/user");
+const Subject = require("./routes/subject");
+const Teacher = require("./routes/teacher");
+const Class = require("./routes/class");
+const Role= require("./routes/role");
+const Period = require("./routes/period");
+const Section = require("./routes/section");
+const Schedules = require("./routes/schedule");
+const verifyToken = require("./middleware/verifyToken");
+const Admin = require("./routes/admin");
+const Hod = require("./routes/hod");
 
 
--------------      Period1     Period2    Period3    Period4    Period5     Period6       Period7  
-
-teacherName   -
-
-teacherName   -
-
-teacherName   -
 
 
-ye hai agar hod teacher ke hisab se schedule dekhna chahe 
-isme bhi cards aaenge period ke hisab se 
-period: http://localhost:5000/period/get
+app.use(cors());
 
-tecaherName: http://localhost:5000/teacher/get
-response{
-      name: teacher.name,
-      employeeCode: teacher.employeeCode,
-} 
-
-only need this and for getting schedule for these cards respective to teacher 
-   
-classname➡️sectionName➡️subject➡️Day&Date
-classname➡️sectionName➡️subject➡️Day&Date
-classname➡️sectionName➡️subject➡️Day&Date
-
-api : http://localhost:5000/schedule/teacher/:teacherName
-response{
-    
-  periodId,
-  classId,
-  sectionId,
-  subjectId,
-
-  className,
-  sectionName,
-  subjectName,
-
-  scheduleDate,
-  dayOfWeek
-
-}
-
-///////////////////////////////////////////////////////////////////////////////////////////////////////
-
--------------      Period1     Period2    Period3    Period4    Period5     Period6       Period7  
-
-className   -
-
-className  -
-
-className   -
+app.use(express.json());
+app.use(cookieParser());
 
 
-ye hai agar hod class ke hisab se schedule dekhna chahe 
-isme bhi cards aaenge period ke hisab se 
-period: http://localhost:5000/period/get
+//useRoutes
+app.use("/user",User);
+app.use("/role", Role);
+app.use("/class", Class);
+app.use("/teacher", Teacher);
+app.use("/section", Section);
+app.use("/subject", Subject);
+app.use("/period", Period);
+app.use("/admin", Admin);
+app.use("/hod", Hod);
+app.use("/schedule" , Schedules);
 
-className: http://localhost:5000/class/get
-response{
-     className
-} 
 
-only need this and for getting schedule for these cards respective to teacher 
-   
-sectionName➡️tecaherName➡️subject➡️Day&Date
-sectionName➡️tecaherName➡️subject➡️Day&Date
-sectionName➡️tecaherName➡️subject➡️Day&Date
+//Start Server
 
-api : http://localhost:5000/schedule/class/:className
-{
-  periodId,
-  teacherId,
-  sectionId,
-  subjectId,
-
-  teacherName,
-  sectionName,
-  subjectName,
-
-  scheduleDate,
-  dayOfWeek
-}
+app.listen(PORT, '0.0.0.0', () => {
+  console.log('Server running on port 5000');
+});
