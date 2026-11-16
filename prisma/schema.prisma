@@ -1,3 +1,4 @@
+
 generator client {
   provider = "prisma-client-js"
   output   = "../src/generated/prisma"
@@ -5,53 +6,6 @@ generator client {
 
 datasource db {
   provider = "postgresql"
-}
-
-// =====================================================
-// ADMIN
-// =====================================================
-
-model Admin {
-  id Int @id @default(autoincrement())
-
-  name     String @db.VarChar(100)
-  email    String @unique @db.VarChar(100)
-  password String @db.VarChar(255)
-
-  isActive  Boolean @default(true) @map("is_active")
-  isDeleted Boolean @default(false) @map("is_deleted")
-
-  createdAt DateTime @default(now()) @map("created_at")
-  updatedAt DateTime @updatedAt @map("updated_at")
-
-  @@map("admin")
-}
-
-// =====================================================
-// HOD
-// =====================================================
-
-model Hod {
-  id Int @id @default(autoincrement())
-
-  name     String @db.VarChar(100)
-  email    String @unique @db.VarChar(100)
-  password String @db.VarChar(255)
-
-  employeeCode String @unique @map("employee_code") @db.VarChar(50)
-
-  // PRIMARY = Class 1-5
-  // MIDDLE  = Class 6-8
-  // SENIOR  = Class 9-12
-  hodGroup String @unique @map("hod_group") @db.VarChar(20)
-
-  isActive  Boolean @default(true) @map("is_active")
-  isDeleted Boolean @default(false) @map("is_deleted")
-
-  createdAt DateTime @default(now()) @map("created_at")
-  updatedAt DateTime @updatedAt @map("updated_at")
-
-  @@map("hod")
 }
 
 // =====================================================
@@ -97,7 +51,6 @@ model Class {
 
   @@map("class")
 }
-
 
 // =====================================================
 // SECTION
@@ -193,9 +146,6 @@ model Schedule {
   subject Subject @relation(fields: [subjectId], references: [id])
   period  Period  @relation(fields: [periodId], references: [id])
 
-  // Same class and section cannot have
-  // two schedules in the same period.
-
   @@index([scheduleDate])
   @@index([teacherId])
   @@index([classId])
@@ -206,33 +156,11 @@ model Schedule {
 }
 
 // =====================================================
-// ROLE
-// =====================================================
-
-model Role {
-  id Int @id @default(autoincrement())
-
-  name String @unique @db.VarChar(50)
-
-  isActive  Boolean @default(true) @map("is_active")
-  isDeleted Boolean @default(false) @map("is_deleted")
-
-  createdAt DateTime @default(now()) @map("created_at")
-  updatedAt DateTime @updatedAt @map("updated_at")
-
-  users User[]
-
-  @@map("role")
-}
-
-// =====================================================
 // USER
 // =====================================================
 
 model User {
   id Int @id @default(autoincrement())
-
-  roleId Int @map("role_id")
 
   name     String @db.VarChar(100)
   email    String @unique @db.VarChar(100)
@@ -244,8 +172,5 @@ model User {
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at")
 
-  role Role @relation(fields: [roleId], references: [id])
-
-  @@index([roleId])
   @@map("user")
 }

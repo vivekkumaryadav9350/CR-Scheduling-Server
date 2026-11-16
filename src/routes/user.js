@@ -1,3 +1,4 @@
+
 const express = require("express");
 const router = express.Router();
 
@@ -29,13 +30,9 @@ const prisma = new PrismaClient({
 // =====================================================
 
 router.post("/login", async (req, res) => {
-  const {
-    email,
-    password,
-  } = req.body;
+  const { email, password } = req.body;
 
   try {
-
     if (!email || !password) {
       return errorResponse(
         res,
@@ -44,27 +41,19 @@ router.post("/login", async (req, res) => {
       );
     }
 
-
     const user = await prisma.user.findUnique({
       where: {
         email: email.trim().toLowerCase(),
       },
-
-      include: {
-        role: true,
-      },
     });
 
-    if (!user) {
+    if (!user || user.isDeleted) {
       return errorResponse(
         res,
         404,
         "User not found"
       );
     }
-
-
-    // USER ACTIVE CHECK
 
     if (!user.isActive) {
       return errorResponse(
@@ -73,18 +62,6 @@ router.post("/login", async (req, res) => {
         "User account is inactive"
       );
     }
-
-
-    // ROLE ACTIVE CHECK
-
-    if (!user.role || !user.role.isActive) {
-      return errorResponse(
-        res,
-        403,
-        "User role is inactive"
-      );
-    }
-
 
     const isMatch = await bcrypt.compare(
       password,
@@ -99,22 +76,16 @@ router.post("/login", async (req, res) => {
       );
     }
 
-
     const token = jwt.sign(
       {
         id: user.id,
         email: user.email,
-        roleId: user.roleId,
-        roleName: user.role.name,
       },
-
       process.env.JWT_SECRETKEY,
-
       {
         expiresIn: "1h",
       }
     );
-
 
     res.cookie("token", token, {
       httpOnly: true,
@@ -122,13 +93,11 @@ router.post("/login", async (req, res) => {
       secure: false,
     });
 
-
     return successResponse(
       res,
       200,
       "Login Successful",
       {
-        roleName: user.role.name,
         name: user.name,
         email: user.email,
         isActive: user.isActive,
@@ -141,60 +110,32 @@ router.post("/login", async (req, res) => {
 });
 
 
-
 // =====================================================
 // REGISTER
 // POST /register
 // =====================================================
 
 router.post("/register", async (req, res) => {
-
   const {
-    roleName,
     name,
     email,
     password,
   } = req.body;
 
   try {
-
-    if (
-      !roleName ||
-      !name ||
-      !email ||
-      !password
-    ) {
+    if (!name || !email || !password) {
       return errorResponse(
         res,
         400,
-        "Role, name, email and password are required"
+        "Name, email and password are required"
       );
     }
 
-
-    const role = await prisma.role.findFirst({
+    const existingUser = await prisma.user.findUnique({
       where: {
-        name: roleName.trim(),
-        isActive: true,
-        isDeleted: false,
+        email: email.trim().toLowerCase(),
       },
     });
-
-    if (!role) {
-      return errorResponse(
-        res,
-        404,
-        "Role not found or inactive"
-      );
-    }
-
-
-    const existingUser =
-      await prisma.user.findUnique({
-        where: {
-          email: email.trim().toLowerCase(),
-        },
-      });
 
     if (existingUser) {
       return errorResponse(
@@ -204,25 +145,19 @@ router.post("/register", async (req, res) => {
       );
     }
 
-
-    const hashedPassword =
-      await bcrypt.hash(password, 10);
-
+    const hashedPassword = await bcrypt.hash(
+      password,
+      10
+    );
 
     const user = await prisma.user.create({
       data: {
-        roleId: role.id,
         name: name.trim(),
         email: email.trim().toLowerCase(),
         password: hashedPassword,
         isActive: true,
       },
-
-      include: {
-        role: true,
-      },
     });
-
 
     return successResponse(
       res,
@@ -231,7 +166,6 @@ router.post("/register", async (req, res) => {
       {
         name: user.name,
         email: user.email,
-        roleName: user.role.name,
         isActive: user.isActive,
       }
     );
@@ -242,24 +176,20 @@ router.post("/register", async (req, res) => {
 });
 
 
-
 // =====================================================
 // UPDATE USER
 // PUT /update/:id
 // =====================================================
 
 router.put("/update/:id", async (req, res) => {
-
   const id = Number(req.params.id);
 
   const {
-    roleName,
     name,
     email,
     password,
     isActive,
   } = req.body;
-
 
   if (isNaN(id)) {
     return errorResponse(
@@ -269,16 +199,14 @@ router.put("/update/:id", async (req, res) => {
     );
   }
 
-
   try {
-
     const user = await prisma.user.findUnique({
       where: {
         id: id,
       },
     });
 
-    if (!user) {
+    if (!user || user.isDeleted) {
       return errorResponse(
         res,
         404,
@@ -286,75 +214,52 @@ router.put("/update/:id", async (req, res) => {
       );
     }
 
+    const data = {};
 
-    const role = await prisma.role.findFirst({
-      where: {
-        name: roleName.trim(),
-        isActive: true,
-        isDeleted: false,
-      },
-    });
-
-    if (!role) {
-      return errorResponse(
-        res,
-        404,
-        "Role not found or inactive"
-      );
+    if (name !== undefined) {
+      data.name = name.trim();
     }
 
+    if (email !== undefined) {
+      const normalizedEmail = email.trim().toLowerCase();
 
-    const existingUser =
-      await prisma.user.findFirst({
+      const existingUser = await prisma.user.findFirst({
         where: {
-          email: email.trim().toLowerCase(),
-
+          email: normalizedEmail,
           NOT: {
             id: id,
           },
         },
       });
 
-    if (existingUser) {
-      return errorResponse(
-        res,
-        409,
-        "Email already registered"
+      if (existingUser) {
+        return errorResponse(
+          res,
+          409,
+          "Email already registered"
+        );
+      }
+
+      data.email = normalizedEmail;
+    }
+
+    if (password) {
+      data.password = await bcrypt.hash(
+        password,
+        10
       );
     }
 
-
-    const data = {
-      roleId: role.id,
-      name: name.trim(),
-      email: email.trim().toLowerCase(),
-
-      isActive:
-        isActive !== undefined
-          ? Boolean(isActive)
-          : user.isActive,
-    };
-
-
-    if (password) {
-      data.password =
-        await bcrypt.hash(password, 10);
+    if (isActive !== undefined) {
+      data.isActive = Boolean(isActive);
     }
 
-
-    const updatedUser =
-      await prisma.user.update({
-        where: {
-          id: id,
-        },
-
-        data: data,
-
-        include: {
-          role: true,
-        },
-      });
-
+    const updatedUser = await prisma.user.update({
+      where: {
+        id: id,
+      },
+      data: data,
+    });
 
     return successResponse(
       res,
@@ -363,7 +268,6 @@ router.put("/update/:id", async (req, res) => {
       {
         name: updatedUser.name,
         email: updatedUser.email,
-        roleName: updatedUser.role.name,
         isActive: updatedUser.isActive,
       }
     );
@@ -374,14 +278,12 @@ router.put("/update/:id", async (req, res) => {
 });
 
 
-
 // =====================================================
 // DELETE USER
 // DELETE /delete/:id
 // =====================================================
 
 router.delete("/delete/:id", async (req, res) => {
-
   const id = Number(req.params.id);
 
   if (isNaN(id)) {
@@ -392,16 +294,14 @@ router.delete("/delete/:id", async (req, res) => {
     );
   }
 
-
   try {
-
     const user = await prisma.user.findUnique({
       where: {
         id: id,
       },
     });
 
-    if (!user) {
+    if (!user || user.isDeleted) {
       return errorResponse(
         res,
         404,
@@ -409,19 +309,15 @@ router.delete("/delete/:id", async (req, res) => {
       );
     }
 
-
-    const deletedUser =
-      await prisma.user.update({
-        where: {
-          id: id,
-        },
-
-        data: {
-          isDeleted: true,
-          isActive: false,
-        },
-      });
-
+    const deletedUser = await prisma.user.update({
+      where: {
+        id: id,
+      },
+      data: {
+        isDeleted: true,
+        isActive: false,
+      },
+    });
 
     return successResponse(
       res,
